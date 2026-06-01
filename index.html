@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DOMINIO — Edición Clásica</title>
+  <link href="[https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700&family=IM+Fell+English:ital@0;1&family=UnifrakturMaguntia&display=swap](https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700&family=IM+Fell+English:ital@0;1&family=UnifrakturMaguntia&display=swap)" rel="stylesheet">
+  
+  <!-- Aquí importamos los estilos que irán en el archivo style.css -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-theme="clasico">
+
+  <!-- Capas Visuales de Fondo -->
+  <canvas id="bg-particles"></canvas>
+  <div id="vignette-overlay"></div>
+  <div id="grain-overlay"></div>
+  <div id="toast-container"></div>
+
+  <!-- Antorchas -->
+  <div class="torch torch-left">
+    <div class="torch-fire"><canvas id="flame-left" width="28" height="38"></canvas></div>
+    <div class="torch-sconce"></div>
+    <div class="torch-shaft"></div>
+  </div>
+  <div class="torch torch-right">
+    <div class="torch-fire"><canvas id="flame-right" width="28" height="38"></canvas></div>
+    <div class="torch-sconce"></div>
+    <div class="torch-shaft"></div>
+  </div>
+
+  <!-- Cabecera Principal -->
+  <header id="site-header">
+    <span class="header-ornament">El Juego de Estrategia y Asedio</span>
+    <h1>DOMINIO</h1>
+    <div class="header-rule">
+      <span class="rule-gem">✦</span><span>Edición Clásica</span><span class="rule-gem">✦</span>
+    </div>
+  </header>
+
+  <!-- Barra de Estado Superior -->
+  <div id="status-bar">
+    <div class="sb-left">
+      <span id="turn-badge" class="atacante">Invasores ▶</span>
+      <span id="iron-badge">⚔ Línea de Hierro</span>
+    </div>
+    <div class="sb-right">
+      <span id="round-display">Ronda 1 / 20</span>
+      <button class="sb-btn" onclick="showStartMenu()">☰ Menú</button>
+    </div>
+  </div>
+
+  <!-- Estructura Principal del Tablero y Paneles -->
+  <div id="main">
+    
+    <!-- Panel de IA Izquierdo -->
+    <div id="left-panel" style="display:none;">
+      <div class="panel-box in-game-bot-card">
+        <img id="in-game-bot-avatar" class="in-game-bot-avatar" src="" alt="Bot">
+        <div id="in-game-bot-name" class="in-game-bot-name">Nombre</div>
+        <div id="in-game-bot-title" class="in-game-bot-title">Título</div>
+        <!-- Esta es la burbuja de chat del bot (Darius, Capitán, etc.) -->
+        <div class="in-game-chat-container" id="in-game-bot-chat">Pensando...</div>
+      </div>
+    </div>
+
+    <!-- Zona Central: El Tablero -->
+    <div id="board-section">
+      <div id="board-frame">
+        <span class="frame-corner tl">✦</span>
+        <span class="frame-corner tr">✦</span>
+        <span class="frame-corner bl">✦</span>
+        <span class="frame-corner br">✦</span>
+        <div id="board-outer">
+          <div id="past-overlay" class="past-overlay" style="display: none;"></div>
+          <div id="board-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel Lateral Derecho: Ajustes y Registro -->
+    <div id="side-panel">
+      <!-- Ajustes -->
+      <div class="panel-box">
+        <h3 class="no-ornament" style="display:flex; justify-content:space-between; align-items:center; padding-right:0.6rem;">
+          <span>❧ Ajustes</span>
+          <span style="font-size:0.6rem; color:var(--text-dim); font-weight:400; letter-spacing:0.05em; font-style:italic;">Estética y Audio</span>
+        </h3>
+        <div class="audio-row" style="padding-bottom:0.2rem;">
+          <label>Aspecto</label>
+          <select id="theme-select" onchange="changeTheme(this.value)" class="styled-select" style="width: 55%;">
+            <option value="clasico">Clásico (Piedra)</option>
+            <option value="boreal">Boreal (Hielo)</option>
+            <option value="desierto">Desierto (Arena)</option>
+          </select>
+        </div>
+        <div class="audio-row" style="padding-bottom:0.6rem;">
+          <label>Música</label>
+          <select id="music-theme-select" onchange="changeMusicTheme(this.value)" class="styled-select" style="width: 55%;">
+            <option value="gregoriano">Solemne (Gregoriano)</option>
+            <option value="taberna">Alegre (Taberna)</option>
+            <option value="mistico">Ambiental (Místico)</option>
+          </select>
+        </div>
+        <div class="audio-row" style="padding-top:0.4rem; border-top:1px dashed rgba(200,114,40,0.15);">
+          <label>Melodía</label>
+          <input type="range" min="0" max="1" step="0.05" value="0.5" oninput="updateVol('music', this.value)">
+        </div>
+        <div class="audio-row" style="padding-top:0;">
+          <label>Efectos</label>
+          <input type="range" min="0" max="1" step="0.05" value="0.5" oninput="updateVol('sfx', this.value)">
+        </div>
+      </div>
+
+      <!-- Registro de Partida -->
+      <div class="panel-box">
+        <h3 class="no-ornament" style="display:flex; justify-content:space-between; align-items:center; padding-right:0.6rem;">
+          <span>❧ Registro de Partida</span>
+          <button id="btn-copy" onclick="copyLog()" style="font-family:inherit; font-size:0.63rem; background:rgba(200,114,40,0.14); border:1px solid var(--panel-border); color:var(--fire-gold); padding:0.15rem 0.5rem; border-radius:2px; cursor:pointer; transition:all 0.2s;">📋 Copiar</button>
+        </h3>
+        <div id="history-controls">
+          <button class="btn-hist" id="btn-hist-start" onclick="navHistory('start')" title="Inicio" disabled="">|◄</button>
+          <button class="btn-hist" id="btn-hist-prev" onclick="navHistory('prev')" title="Anterior" disabled="">◄</button>
+          <span id="hist-display">0 / 0</span>
+          <button class="btn-hist" id="btn-hist-next" onclick="navHistory('next')" title="Siguiente" disabled="">►</button>
+          <button class="btn-hist" id="btn-hist-end" onclick="navHistory('end')" title="Actual" disabled="">►|</button>
+        </div>
+        <div id="game-log"></div>
+      </div>
+
+      <!-- Leyenda -->
+      <div class="panel-box">
+        <h3>Facciones</h3>
+        <div id="legend">
+          <div class="leg-item"><div class="leg-dot I"></div><span><span class="leg-name tag-atk">⚔ Invasores</span> — 1–2 casillas</span></div>
+          <div class="leg-item"><div class="leg-dot G"></div><span><span class="leg-name tag-def">🛡 Guardianes</span> — 1 casilla</span></div>
+          <div class="leg-item"><div class="leg-dot S"></div><span><span class="leg-name tag-king">♛ El Señor</span> — 1 casilla o salto</span></div>
+        </div>
+      </div>
+
+      <!-- Reglas Resumidas -->
+      <div class="panel-box">
+        <h3>Reglas — Resumen</h3>
+        <div id="rules-content">
+          <h4>Objetivos</h4>
+          <ul>
+            <li><span class="tag-def">Defensor:</span> Señor llega a una esquina ✦</li>
+            <li><span class="tag-atk">Atacante:</span> Capturar al Señor fuera de D4</li>
+          </ul>
+          <h4>Movimiento</h4>
+          <ul>
+            <li><span class="tag-king">Señor:</span> 1 casilla, o salto sobre 1 Guardián propio hacia casilla vacía.</li>
+            <li><span class="tag-def">Guardián:</span> 1 casilla libre.</li>
+            <li><span class="tag-atk">Invasor:</span> 1 ó 2 casillas libres.</li>
+          </ul>
+          <h4>Captura</h4>
+          <ul>
+            <li>Alinear pieza enemiga entre dos propias.</li>
+            <li>Señor invulnerable en D4; al salir, sin retorno.</li>
+          </ul>
+          <h4>Reglas Especiales</h4>
+          <ul>
+            <li>Las esquinas ✦ son santuario; nadie excepto el Señor puede ocuparlas o atravesarlas.</li>
+            <li>3 Guardianes consecutivos reducen el movimiento Invasor adyacente a 1 casilla (Línea de Hierro).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================
+       VENTANAS EMERGENTES (MODALS)
+  =========================================== -->
+
+  <!-- 1. Lobby / Menú Principal -->
+  <div id="start-overlay" class="overlay">
+    <div class="modal lobby-modal">
+      <span class="modal-corner-tl">✦</span>
+      <span class="modal-corner-tr" style="position: absolute; top: 8px; right: 12px; color: var(--fire-ember); font-size: 0.7rem; opacity: 0.5; pointer-events: none;">✦</span>
+      <span class="modal-corner-bl" style="position: absolute; bottom: 8px; left: 12px; color: var(--fire-ember); font-size: 0.7rem; opacity: 0.5; pointer-events: none;">✦</span>
+      <span class="modal-corner-br" style="position: absolute; bottom: 8px; right: 12px; color: var(--fire-ember); font-size: 0.7rem; opacity: 0.5; pointer-events: none;">✦</span>
+      
+      <div class="player-profile-header">
+        <div>
+          <span class="streak-counter" title="Racha de días seguidos jugando"><span id="streak-display">0</span> 🔥</span>
+        </div>
+        <div>
+          <span>Partidas: <b id="stat-played">0</b> &nbsp;|&nbsp; </span>
+          <span>Victorias: <b id="stat-wins" style="color:var(--fire-gold)">0</b></span>
+        </div>
+      </div>
+
+      <div class="bot-profile-header">
+        <div class="bot-avatar-container">
+          <img id="menu-bot-avatar" class="bot-avatar" src="" alt="Bot Avatar">
+        </div>
+        <div class="bot-chat-bubble" id="menu-bot-chat">¡Hola! Listo para la batalla.</div>
+      </div>
+      
+      <div class="bot-info-section">
+        <div class="bot-info-name" id="menu-bot-name">Nombre del Bot</div>
+        <div class="bot-info-rating" id="menu-bot-rating">Principiante (Nivel 1)</div>
+      </div>
+
+      <div class="bot-categories" id="bot-catalog"></div>
+
+      <div class="bot-play-actions">
+        <div style="display:flex; width: 100%; gap:0.5rem; margin-bottom: 0.5rem;">
+          <button class="btn-play btn-play-alt" onclick="openTutorial()" style="flex:1;">Aprender a Jugar 📖</button>
+          <button class="btn-play btn-play-alt" onclick="openQuests()" style="flex:1;">Misiones y Logros 🏅</button>
+        </div>
+        <button class="btn-play" onclick="startGameWithMenuBot('pve-def')" title="Tú defiendes el castillo.">Jugar Defensor 🛡</button>
+        <button class="btn-play" onclick="startGameWithMenuBot('pve-atk')" title="Tú diriges el asedio.">Jugar Invasor ⚔</button>
+        <button class="btn-play btn-play-pvp" onclick="startGameWithMenuBot('pvp')" title="Jugar contra alguien en la misma pantalla.">Jugador vs Jugador 👥</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Modal Misiones y Logros -->
+  <div id="quests-overlay" class="overlay">
+    <div class="modal quests-modal">
+      <span class="modal-corner-tl">✦</span>
+      <span class="modal-corner-tr" style="position: absolute; top: 8px; right: 12px; color: var(--fire-ember); font-size: 0.7rem; opacity: 0.5; pointer-events: none;">✦</span>
+      <span class="modal-corner-bl" style="position: absolute; bottom: 8px; left: 12px; color: var(--fire-ember); font-size: 0.7rem; opacity: 0.5; pointer-events: none;">✦</span>
+      <span class="modal-corner-br" style="position: absolute; bottom: 8px; right: 12px; color: var(--fire-ember); font-size: 0.7rem; opacity: 0.5; pointer-events: none;">✦</span>
+      
+      <div class="modal-title-main" style="text-align: center; margin-bottom: 1.5rem;">Registro de Hazañas</div>
+      <div class="q-section-title">Misiones Diarias</div>
+      <div id="quests-container"></div>
+      <div class="q-section-title" style="margin-top: 1.5rem;">Logros Permanentes</div>
+      <div class="achiev-grid" id="achiev-container"></div>
+      <button class="btn-end tertiary" style="margin-top: 2rem; width: 100%; border: none;" onclick="closeQuests()">✕ Volver al Menú</button>
+    </div>
+  </div>
+
+  <!-- 3. Modal Fin de Partida -->
+  <div id="end-overlay" class="overlay">
+    <div class="modal">
+      <span class="modal-corner-tl">✦</span>
+      <span id="modal-icon">⚔</span>
+      <div id="modal-title" style="color: var(--blood-bright);">Fin de Partida</div>
+      <div class="modal-rule" style="margin:0.5rem auto 0.9rem;"><span>✦</span></div>
+      <div id="modal-msg">El destino ha sido sellado.</div>
+
+      <div id="extend-options" style="display:none; margin-bottom:1.6rem;">
+        <div style="font-size:0.8rem; color:var(--text-dim); font-style:italic; margin-bottom:0.7rem;">¿Deseas prolongar el asedio?</div>
+        <div style="display:flex; gap:0.6rem; justify-content:center; flex-wrap:wrap;">
+          <button id="btn-ext-25" class="btn-end tertiary" onclick="extendGame(25)">25 Rondas</button>
+          <button id="btn-ext-30" class="btn-end tertiary" onclick="extendGame(30)">30 Rondas</button>
+          <button id="btn-ext-40" class="btn-end tertiary" onclick="extendGame(40)">40 Rondas</button>
+          <button id="btn-ext-50" class="btn-end tertiary" onclick="extendGame(50)">50 Rondas</button>
+        </div>
+      </div>
+
+      <div class="modal-btn-row">
+        <button class="btn-end primary" onclick="showStartMenu()">Nuevo Asedio</button>
+        <button class="btn-end secondary" onclick="hideEndModal()">Revisar Partida</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Modal Tutorial -->
+  <div id="tutorial-overlay" class="overlay">
+    <div class="modal">
+      <span class="modal-corner-tl">✦</span>
+      <span class="modal-corner-tr" style="position: absolute; top: 8px; right: 12px; color: var(--fire-ember); font-size: 0.7rem; opacity: 0.5; pointer-events: none;">✦</span>
+      <span class="modal-corner-bl" style="position: absolute; bottom: 8px; left: 12px; color: var(--fire-ember); font-size: 0.7rem; opacity: 0.5; pointer-events: none;">✦</span>
+      <span class="modal-corner-br" style="position: absolute; bottom: 8px; right: 12px; color: var(--fire-ember); font-size: 0.7rem; opacity: 0.5; pointer-events: none;">✦</span>
+      
+      <div id="tut-content"></div>
+      <div class="tut-dots" id="tut-dots"></div>
+      
+      <div class="modal-btn-row">
+        <button class="btn-end secondary" id="btn-tut-prev" onclick="prevTut()">Anterior</button>
+        <button class="btn-end primary" id="btn-tut-next" onclick="nextTut()">Siguiente</button>
+      </div>
+      <button class="btn-end tertiary" style="margin-top: 1rem; width: 100%; border: none;" onclick="closeTutorial()">✕ Cerrar Tutorial</button>
+    </div>
+  </div>
+
+  <!-- Aquí importamos el script principal, que cargará después del HTML -->
+  <script src="js/main.js"></script>
+</body>
+</html>
+
