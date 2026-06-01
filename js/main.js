@@ -309,11 +309,14 @@ function startGame(mode, botId = null) {
   boardHistory = [getBoardHash()]; stateHistory = []; historyIndex = 0; lastFrom = null; lastTo = null;
   ironSet = calculateIronSetSim(board);
   
-  // INICIALIZAR LÍMITE DE DESHACER SEGÚN DIFICULTAD
+  // NUEVO: INICIALIZAR LÍMITE DE DESHACER LEYENDO EL MENÚ (Y NO EL BOT)
   if (mode === 'pvp') {
     undosLeft = Infinity; 
   } else {
-    undosLeft = BOTS[activeBotId].undosAllowed;
+    const assistMode = document.getElementById('assist-mode').value;
+    if (assistMode === 'friendly') undosLeft = Infinity;
+    else if (assistMode === 'balanced') undosLeft = 3;
+    else if (assistMode === 'challenge') undosLeft = 0;
   }
   
   saveState([{ text: `Partida iniciada. Los Invasores atacan primero.`, type: 'sys' }]);
