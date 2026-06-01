@@ -441,6 +441,21 @@ h1 {
   50% { box-shadow: 0 5px 18px rgba(0,0,0,0.75), 0 0 0 1.5px var(--fire-bright), 0 0 28px rgba(200,114,40,0.65), inset 0 2px 0 rgba(255,255,255,0.5); }
 }
 .piece-S.selected { box-shadow: 0 6px 26px rgba(0,0,0,0.75), 0 0 0 2.5px var(--fire-bright), 0 0 30px var(--p-king-1) !important; animation: none; }
+@keyframes kingShin {
+0%,100% { box-shadow: 0 5px 18px rgba(0,0,0,0.75), 0 0 0 1px var(--fire-dim), 0 0 14px rgba(200,114,40,0.3), inset 0 2px 0 rgba(255,255,255,0.3); }
+50% { box-shadow: 0 5px 18px rgba(0,0,0,0.75), 0 0 0 1.5px var(--fire-bright), 0 0 28px rgba(200,114,40,0.65), inset 0 2px 0 rgba(255,255,255,0.5); }
+}
+.piece-S.selected { box-shadow: 0 6px 26px rgba(0,0,0,0.75), 0 0 0 2.5px var(--fire-bright), 0 0 30px var(--p-king-1) !important; animation: none; }
+
+/* NUEVO: ANIMACIÓN DE MOVIMIENTO SUAVE */
+.piece.move-anim {
+animation: slidePiece 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.1) forwards !important;
+z-index: 10;
+}
+@keyframes slidePiece {
+from { transform: translate(calc(var(--dx) * (var(--cs) + 1px)), calc(var(--dy) * (var(--cs) + 1px))); }
+to { transform: translate(0, 0); }
+}
 
 /* ══════════════════════════════════════════════
    8. PANELES LATERALES (AJUSTES, BOTS, LOGS)
