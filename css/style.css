@@ -649,6 +649,11 @@ input[type=range]::-webkit-slider-thumb:hover { background: radial-gradient(circ
 }
 .bot-card.selected .bot-card-name { color: var(--fire-gold); font-weight: bold; }
 
+.bot-assist-config { padding: 0 1.5rem 1rem; text-align: left; }
+.assist-label { font-family: 'Cinzel', serif; font-size: 0.8rem; color: var(--fire-gold); display: block; margin-bottom: 0.4rem; }
+.assist-select { width: 100%; padding: 0.4rem; font-size: 0.8rem; }
+.assist-desc { font-size: 0.7rem; color: var(--text-dim); margin-top: 0.4rem; font-style: italic; }
+
 .bot-play-actions {
   display: flex; gap: 0.8rem; padding: 1.5rem; background: rgba(0,0,0,0.6);
   border-top: 1px solid var(--panel-border); justify-content: center; flex-wrap: wrap;
