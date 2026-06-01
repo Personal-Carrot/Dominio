@@ -524,32 +524,32 @@ function updateUI() {
       if (lastTo && lastTo.r === r && lastTo.c === c) cell.classList.add('last-to');
       const p = board[r][c];
       if (p !== '.') {
-        const pd = document.createElement('div'); pd.className = `piece piece-${p}`; pd.textContent = VISUAL_THEMES[theme][p];
-        if (selectedCell && selectedCell.r === r && selectedCell.c === c) pd.classList.add('selected'); cell.appendChild(pd);
+        const pd = document.createElement('div');
+        pd.className = `piece piece-${p}`; 
+        pd.textContent = VISUAL_THEMES[theme][p];
+        
+        // NUEVO: Lógica Matemática de Deslizamiento (Inyección CSS)
+        if (animateNextMove && lastFrom && lastTo && lastTo.r === r && lastTo.c === c) {
+          pd.classList.add('move-anim');
+          pd.style.setProperty('--dx', lastFrom.c - lastTo.c);
+          pd.style.setProperty('--dy', lastFrom.r - lastTo.r);
+          // Eliminar la clase una vez terminada para que no interfiera luego
+          pd.addEventListener('animationend', () => pd.classList.remove('move-anim'));
+        }
+
+        if (selectedCell && selectedCell.r === r && selectedCell.c === c) pd.classList.add('selected');
+        cell.appendChild(pd);
       }
-      cell.addEventListener('click', () => handleCellClick(r, c)); grid.appendChild(cell);
+      
+      cell.addEventListener('click', () => handleCellClick(r, c));
+      grid.appendChild(cell);
     }
   }
   
-  const badge = document.getElementById('turn-badge'); 
-  if (isGameOver) { badge.textContent = 'Partida Finalizada'; badge.className = ''; } 
-  else {
-    const ai = isAITurn() ? ' (IA)' : '';
-    if (currentPlayer === 'atacante') { badge.textContent = `Invasores${ai} ▶`; badge.className = 'atacante'; }
-    else { badge.textContent = `Defensores${ai} ▶`; badge.className = 'defensor'; }
-  }
-  document.getElementById('round-display').textContent = `Ronda ${round} / ${maxRounds}`;
-  if(ironSet) document.getElementById('iron-badge').classList.toggle('active', ironSet.size > 0);
-
-  // NUEVO: Actualizar el estado del botón Deshacer
-  const undoBtn = document.getElementById('btn-undo');
-  if (undoBtn) {
-    if (isProcessingAI || isGameOver || stateHistory.length <= 1) {
-      undoBtn.disabled = true;
-      undoBtn.textContent = '⟲ Deshacer';
-    } else {
-      undoBtn.disabled = false;
-      const countText = undosLeft === Infinity ? '∞' : undosLeft;
+  animateNextMove = false; // NUEVO: Apagamos la bandera para evitar animaciones fantasma
+  
+  // Actualizar Leyendas según Tema Visual
+  document.querySelector('.leg-dot.I + span .leg-name').textContent = VISUAL_THEMES[currentVisualTheme]['I'] + " Invasores";
       undoBtn.textContent = `⟲ Deshacer (${countText})`;
     }
   }
