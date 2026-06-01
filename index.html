@@ -4,20 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>DOMINIO — Edición Clásica</title>
-  <link href="[https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700&family=IM+Fell+English:ital@0;1&family=UnifrakturMaguntia&display=swap](https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700&family=IM+Fell+English:ital@0;1&family=UnifrakturMaguntia&display=swap)" rel="stylesheet">
-  
-  <!-- Aquí importamos los estilos que irán en el archivo style.css -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Cinzel+Decorative:wght@400;700&family=IM+Fell+English:ital@0;1&family=UnifrakturMaguntia&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body data-theme="clasico">
 
-  <!-- Capas Visuales de Fondo -->
   <canvas id="bg-particles"></canvas>
   <div id="vignette-overlay"></div>
   <div id="grain-overlay"></div>
   <div id="toast-container"></div>
 
-  <!-- Antorchas -->
   <div class="torch torch-left">
     <div class="torch-fire"><canvas id="flame-left" width="28" height="38"></canvas></div>
     <div class="torch-sconce"></div>
@@ -29,7 +25,6 @@
     <div class="torch-shaft"></div>
   </div>
 
-  <!-- Cabecera Principal -->
   <header id="site-header">
     <span class="header-ornament">El Juego de Estrategia y Asedio</span>
     <h1>DOMINIO</h1>
@@ -38,7 +33,6 @@
     </div>
   </header>
 
-  <!-- Barra de Estado Superior -->
   <div id="status-bar">
     <div class="sb-left">
       <span id="turn-badge" class="atacante">Invasores ▶</span>
@@ -50,21 +44,16 @@
     </div>
   </div>
 
-  <!-- Estructura Principal del Tablero y Paneles -->
   <div id="main">
-    
-    <!-- Panel de IA Izquierdo -->
     <div id="left-panel" style="display:none;">
       <div class="panel-box in-game-bot-card">
         <img id="in-game-bot-avatar" class="in-game-bot-avatar" src="" alt="Bot">
         <div id="in-game-bot-name" class="in-game-bot-name">Nombre</div>
         <div id="in-game-bot-title" class="in-game-bot-title">Título</div>
-        <!-- Esta es la burbuja de chat del bot (Darius, Capitán, etc.) -->
         <div class="in-game-chat-container" id="in-game-bot-chat">Pensando...</div>
       </div>
     </div>
 
-    <!-- Zona Central: El Tablero -->
     <div id="board-section">
       <div id="board-frame">
         <span class="frame-corner tl">✦</span>
@@ -78,9 +67,7 @@
       </div>
     </div>
 
-    <!-- Panel Lateral Derecho: Ajustes y Registro -->
     <div id="side-panel">
-      <!-- Ajustes -->
       <div class="panel-box">
         <h3 class="no-ornament" style="display:flex; justify-content:space-between; align-items:center; padding-right:0.6rem;">
           <span>❧ Ajustes</span>
@@ -112,23 +99,26 @@
         </div>
       </div>
 
-      <!-- Registro de Partida -->
       <div class="panel-box">
         <h3 class="no-ornament" style="display:flex; justify-content:space-between; align-items:center; padding-right:0.6rem;">
           <span>❧ Registro de Partida</span>
           <button id="btn-copy" onclick="copyLog()" style="font-family:inherit; font-size:0.63rem; background:rgba(200,114,40,0.14); border:1px solid var(--panel-border); color:var(--fire-gold); padding:0.15rem 0.5rem; border-radius:2px; cursor:pointer; transition:all 0.2s;">📋 Copiar</button>
         </h3>
         <div id="history-controls">
-          <button class="btn-hist" id="btn-hist-start" onclick="navHistory('start')" title="Inicio" disabled="">|◄</button>
-          <button class="btn-hist" id="btn-hist-prev" onclick="navHistory('prev')" title="Anterior" disabled="">◄</button>
-          <span id="hist-display">0 / 0</span>
-          <button class="btn-hist" id="btn-hist-next" onclick="navHistory('next')" title="Siguiente" disabled="">►</button>
-          <button class="btn-hist" id="btn-hist-end" onclick="navHistory('end')" title="Actual" disabled="">►|</button>
+          <!-- NUEVO BOTÓN DE DESHACER AÑADIDO AQUÍ -->
+          <button class="btn-hist" id="btn-undo" onclick="undoMove()" title="Deshacer último movimiento">⟲ Deshacer</button>
+          
+          <div style="display: flex; gap: 2px;">
+            <button class="btn-hist" id="btn-hist-start" onclick="navHistory('start')" title="Inicio" disabled>|◄</button>
+            <button class="btn-hist" id="btn-hist-prev" onclick="navHistory('prev')" title="Anterior" disabled>◄</button>
+            <span id="hist-display" style="padding: 0 0.4rem;">0 / 0</span>
+            <button class="btn-hist" id="btn-hist-next" onclick="navHistory('next')" title="Siguiente" disabled>►</button>
+            <button class="btn-hist" id="btn-hist-end" onclick="navHistory('end')" title="Actual" disabled>►|</button>
+          </div>
         </div>
         <div id="game-log"></div>
       </div>
 
-      <!-- Leyenda -->
       <div class="panel-box">
         <h3>Facciones</h3>
         <div id="legend">
@@ -138,7 +128,6 @@
         </div>
       </div>
 
-      <!-- Reglas Resumidas -->
       <div class="panel-box">
         <h3>Reglas — Resumen</h3>
         <div id="rules-content">
@@ -158,21 +147,11 @@
             <li>Alinear pieza enemiga entre dos propias.</li>
             <li>Señor invulnerable en D4; al salir, sin retorno.</li>
           </ul>
-          <h4>Reglas Especiales</h4>
-          <ul>
-            <li>Las esquinas ✦ son santuario; nadie excepto el Señor puede ocuparlas o atravesarlas.</li>
-            <li>3 Guardianes consecutivos reducen el movimiento Invasor adyacente a 1 casilla (Línea de Hierro).</li>
-          </ul>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ==========================================
-       VENTANAS EMERGENTES (MODALS)
-  =========================================== -->
-
-  <!-- 1. Lobby / Menú Principal -->
   <div id="start-overlay" class="overlay">
     <div class="modal lobby-modal">
       <span class="modal-corner-tl">✦</span>
@@ -216,7 +195,6 @@
     </div>
   </div>
 
-  <!-- 2. Modal Misiones y Logros -->
   <div id="quests-overlay" class="overlay">
     <div class="modal quests-modal">
       <span class="modal-corner-tl">✦</span>
@@ -233,7 +211,6 @@
     </div>
   </div>
 
-  <!-- 3. Modal Fin de Partida -->
   <div id="end-overlay" class="overlay">
     <div class="modal">
       <span class="modal-corner-tl">✦</span>
@@ -259,7 +236,6 @@
     </div>
   </div>
 
-  <!-- 4. Modal Tutorial -->
   <div id="tutorial-overlay" class="overlay">
     <div class="modal">
       <span class="modal-corner-tl">✦</span>
@@ -278,8 +254,6 @@
     </div>
   </div>
 
-  <!-- Aquí importamos el script principal, que cargará después del HTML -->
   <script src="js/main.js"></script>
 </body>
 </html>
-
