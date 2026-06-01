@@ -295,6 +295,28 @@ function selectMenuBot(botId) {
   document.getElementById('menu-bot-name').textContent = bot.name;
   document.getElementById('menu-bot-rating').textContent = `${bot.title} (Nivel ${bot.depth})`;
   document.getElementById('menu-bot-chat').textContent = bot.dialogue.menu;
+  
+  // Bloquear selector si es Darius (Jefe Final)
+  const assistSelect = document.getElementById('assist-mode');
+  if (assistSelect) {
+    if (botId === 'darius') {
+      assistSelect.value = 'challenge';
+      assistSelect.disabled = true;
+    } else {
+      assistSelect.disabled = false;
+    }
+    updateAssistInfo();
+  }
+}
+
+function updateAssistInfo() {
+  const mode = document.getElementById('assist-mode').value;
+  const desc = document.getElementById('assist-desc');
+  if (!desc) return;
+  
+  if (mode === 'friendly') desc.textContent = "Ideal para aprender. Puedes equivocarte sin miedo.";
+  else if (mode === 'balanced') desc.textContent = "Un equilibrio perfecto para partidas justas.";
+  else if (mode === 'challenge') desc.textContent = "La verdadera guerra. Sin ayudas, sin piedad.";
 }
 
 function showStartMenu() { document.getElementById('end-overlay').classList.remove('show'); initBotMenu(); initStats(); document.getElementById('start-overlay').classList.add('show'); }
