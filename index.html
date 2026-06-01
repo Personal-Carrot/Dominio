@@ -184,14 +184,14 @@
     <div class="bot-categories" id="bot-catalog"></div>
 
     <!-- NUEVO: Selector de Nivel de Asistencia -->
-    <div class="bot-assist-config" style="padding: 0 1.5rem 1rem; text-align: left;">
-      <label for="assist-mode" style="font-family: 'Cinzel', serif; font-size: 0.8rem; color: var(--fire-gold); display: block; margin-bottom: 0.4rem;">Nivel de Asistencia</label>
-      <select id="assist-mode" class="styled-select" style="width: 100%; padding: 0.4rem; font-size: 0.8rem;" onchange="updateAssistInfo()">
+    <div class="bot-assist-config">
+      <label for="assist-mode" class="assist-label">Nivel de Asistencia</label>
+      <select id="assist-mode" class="styled-select assist-select" onchange="updateAssistInfo()">
         <option value="friendly">🤝 Amistoso (Deshacer ilimitado y futuras ayudas)</option>
         <option value="balanced" selected>⚖️ Equilibrado (3 Oportunidades)</option>
         <option value="challenge">🔥 Desafío (Sin ayudas)</option>
       </select>
-      <div id="assist-desc" style="font-size: 0.7rem; color: var(--text-dim); margin-top: 0.4rem; font-style: italic;">Un equilibrio perfecto para partidas justas.</div>
+      <div id="assist-desc" class="assist-desc">Un equilibrio perfecto para partidas justas.</div>
     </div>
 
     <div class="bot-play-actions">
