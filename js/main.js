@@ -30,8 +30,9 @@ let gameMode = 'pvp', isProcessingAI = false;
 let lastFrom = null, lastTo = null;
 let maxRounds = 20;
 
-let undosLeft = 0; // Oportunidades de deshacer
-let animateNextMove = false; // Bandera para la animación de deslizamiento
+// Variables de las nuevas mejoras
+let undosLeft = 0; 
+let animateNextMove = false; 
 
 const DEFAULT_AVATAR_EASY = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%232a5a8a'/%3E%3Ctext x='50' y='65' font-size='50' font-family='sans-serif' fill='white' text-anchor='middle'%3E😊%3C/text%3E%3C/svg%3E";
 const DEFAULT_AVATAR_MED = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23b83030'/%3E%3Ctext x='50' y='65' font-size='50' font-family='sans-serif' fill='white' text-anchor='middle'%3E😠%3C/text%3E%3C/svg%3E";
@@ -42,34 +43,40 @@ const BOTS = {
     id: 'novicio', name: 'Garrick', title: 'El Escudero', category: 'Principiante', avatar: DEFAULT_AVATAR_EASY, depth: 1,
     dialogue: {
       menu: 'Acabo de alistarme en la guardia. Seré suave, lo prometo.',
-      gameStart: ['¡Que gane el mejor!', 'Tengo mi escudo listo.'],
-      capture: ['¡Ajá! ¡Te atrapé!'], theirCapture: ['Oh no... mi pobre pieza.'],
-      kingMove: ['¡Cuidado, su majestad!'], kingEscape: ['¡No, se escapó!'],
-      win: ['¡Gané! ¡Aún no me lo creo!'], lose: ['Necesito más entrenamiento en el patio.']
+      gameStart: ['¡Que gane el mejor!', 'Tengo mi escudo listo.', 'Intentaré recordar las reglas...'],
+      capture: ['¡Ajá! ¡Te atrapé!', '¡Un golpe de suerte!'], theirCapture: ['Oh no... mi pobre pieza.', 'Ese fue un buen movimiento.'],
+      kingMove: ['El Señor se mueve. Debo estar atento.', '¡Cuidado, su majestad!'], kingEscape: ['¡No, se escapó!'],
+      win: ['¡Gané! ¡Aún no me lo creo!', 'Una victoria justa.'], lose: ['Uf, eres muy fuerte para mí.', 'Necesito más entrenamiento en el patio.']
     }
   },
   veterano: {
     id: 'veterano', name: 'Capitán Evans', title: 'Lobo de Mar', category: 'Avanzado', avatar: DEFAULT_AVATAR_MED, depth: 3,
     dialogue: {
       menu: 'He visto mil batallas como esta. ¿Quieres jugar?',
-      gameStart: ['Que hable el acero.'], capture: ['Cayó en la trampa.'],
-      theirCapture: ['Un sacrificio aceptable.'], kingMove: ['Cortadle el paso, muchachos.'],
-      kingEscape: ['¡Maldición! Rompió el cerco.'], win: ['Una táctica de libro.'], lose: ['Has ganado mis respetos.']
+      gameStart: ['Prepara tus defensas, chico.', 'Esta táctica nunca falla.', 'Que hable el acero.'],
+      capture: ['Cayó en la trampa.', 'Ese flanco estaba débil.', 'Despídete de ese soldado.'],
+      theirCapture: ['Un sacrificio aceptable.', 'Veo que tienes buen ojo.', 'No cantes victoria todavía.'],
+      kingMove: ['El Rey intenta huir. Interesante.', 'Cortadle el paso, muchachos.'], kingEscape: ['¡Maldición! Rompió el cerco.'],
+      win: ['Falta experiencia en tus filas.', 'Una táctica de libro. Bien ejecutada por mí.'], lose: ['Me has sorprendido hoy.', 'Bien jugado. Has ganado mis respetos.']
     }
   },
   darius: {
     id: 'darius', name: 'Darius Varkhan', title: 'El Optimizador', category: 'Jefe Final', avatar: DEFAULT_AVATAR_BOSS, depth: 5,
     dialogue: {
       menu: 'El tablero es una ecuación. Yo conozco la solución.',
-      gameStart: ['Cada movimiento tuyo es una variable que ya he despejado.'],
-      capture: ['Error calculado con días de antelación.'], theirCapture: ['Concedo ese intercambio. Ya he calculado lo que sigue.'],
-      kingMove: ['El señor se mueve. El rango de escape se reduce.'], kingEscape: ['Una anomalía en mis cálculos.'],
-      win: ['La partida terminó donde los números indicaban que terminaría.'], lose: ['Recalculando. Hay una variable que no contemplé.']
+      gameStart: ['Cada movimiento tuyo es una variable que ya he despejado.', 'No hay prisa. El tiempo trabaja para mí.'],
+      capture: ['Predecible.', 'Error calculado con días de antelación.', 'La estructura que construiste tenía una grieta. Aquí estaba.'],
+      theirCapture: ['Interesante. Pero insuficiente.', 'Concedo ese intercambio. Ya he calculado lo que sigue.'],
+      kingMove: ['El señor se mueve. El rango de escape se reduce.', 'Cada esquina que bloqueo es una ecuación que se cierra.'],
+      kingEscape: ['Una anomalía en mis cálculos. Pero solo en mis cálculos.'],
+      win: ['La partida terminó donde los números indicaban que terminaría.', 'No fue crueldad. Fue precisión.', 'Buscaste la grieta incorrecta. La correcta no existía.'],
+      lose: ['Recalculando. Hay una variable que no contemplé.', 'Esta derrota tiene una causa exacta. La encontraré.']
     }
   }
 };
 
 let activeBotId = null, selectedMenuBotId = 'novicio', dariusDialogueCooldown = 0;
+
 
 /* ══════════════════════════════════════════════
    2. CONFIGURACIÓN DEL WEB WORKER PARA IA
@@ -108,6 +115,7 @@ function checkAndTriggerAI() {
     if (!aiWorker) initAIWorker();
     const delay = gameMode === 'eve' ? 800 : 520;
     
+    // Bloquear el botón de deshacer mientras la IA piensa
     const undoBtn = document.getElementById('btn-undo');
     if(undoBtn) undoBtn.disabled = true;
 
@@ -127,6 +135,7 @@ function isAITurn() {
   if (gameMode === 'pve-atk' && currentPlayer === 'defensor') return true; 
   return false;
 }
+
 
 /* ══════════════════════════════════════════════
    3. INICIALIZACIÓN Y MENÚ
@@ -201,7 +210,7 @@ function updateAssistInfo() {
   else if (mode === 'challenge') desc.textContent = "La verdadera guerra. Sin ayudas, sin piedad.";
 }
 
-function showStartMenu() { document.getElementById('end-overlay').classList.remove('show'); initBotMenu(); initStats(); document.getElementById('start-overlay').classList.add('show'); }
+function showStartMenu() { document.getElementById('end-overlay').classList.remove('show'); initBotMenu(); initStats(); document.getElementById('start-overlay').classList.add('show'); stopMusic(); }
 
 function startGameWithMenuBot(mode) { if (mode === 'pvp') startGame('pvp', null); else startGame(mode, selectedMenuBotId); }
 
@@ -227,8 +236,11 @@ function startGame(mode, botId = null) {
   if (activeBotId && mode !== 'pvp') { leftPanel.style.display = 'flex'; const bot = BOTS[activeBotId]; document.getElementById('in-game-bot-avatar').src = bot.avatar; document.getElementById('in-game-bot-name').textContent = bot.name; document.getElementById('in-game-bot-title').textContent = bot.title; document.getElementById('in-game-bot-chat').textContent = '...'; } 
   else { leftPanel.style.display = 'none'; }
   
-  updateUI(); trackQuest('play'); checkAndTriggerAI();
+  updateUI(); getCtx(); sfxGameStart(); setTimeout(startMusic, 1600);
+  if (activeBotId && (isAITurn() || gameMode === 'eve')) { setTimeout(() => showBotDialogue('gameStart'), 2200); }
+  trackQuest('play'); checkAndTriggerAI();
 }
+
 
 /* ══════════════════════════════════════════════
    4. REGLAS BÁSICAS 
@@ -247,6 +259,7 @@ function getInvaderMovesSim(boardState, r, c, currentIronSet) { const maxDistanc
 function checkCapturesSim(boardState, moveR, moveC, isKingOut) { const movePiece = boardState[moveR][moveC], moveTeam = getTeam(movePiece), captures = []; for (const [dr, dc] of DIRS) { const adjR = moveR + dr, adjC = moveC + dc; if (!inBounds(adjR, adjC)) continue; const adjPiece = boardState[adjR][adjC]; if (!adjPiece || adjPiece === '.' || getTeam(adjPiece) === moveTeam) continue; if (adjPiece === 'S' && !isKingOut) continue; const flankR = adjR + dr, flankC = adjC + dc; if (!inBounds(flankR, flankC)) continue; const flankPiece = boardState[flankR][flankC]; if (!flankPiece || flankPiece === '.' || getTeam(flankPiece) !== moveTeam) continue; if (adjPiece === 'S' && (movePiece !== 'I' || flankPiece !== 'I')) continue; captures.push({ r: adjR, c: adjC, piece: adjPiece }); } return captures; }
 function simulateApplyMove(tempBoard, fR, fC, tR, tC, isKingOut) { let b = tempBoard.map(row => [...row]); let p = b[fR][fC]; b[fR][fC] = '.'; b[tR][tC] = p; let newKingOut = isKingOut; if (p === 'S' && !newKingOut) newKingOut = true; if (p === 'S' && isCorner(tR, tC)) return { board: b, kingLeftCenter: newKingOut, winner: 'defensor' }; const cap = checkCapturesSim(b, tR, tC, newKingOut); for (let c of cap) { b[c.r][c.c] = '.'; if (c.piece === 'S') return { board: b, kingLeftCenter: newKingOut, winner: 'atacante' }; } return { board: b, kingLeftCenter: newKingOut, winner: null }; }
 
+
 /* ══════════════════════════════════════════════
    5. INTERACCIÓN DEL USUARIO, UI Y DESHACER
 ══════════════════════════════════════════════ */
@@ -258,7 +271,9 @@ function handleCellClick(r, c) {
   const piece = board[r][c], clickTeam = getTeam(piece);
   if (validMoves.some(m => m.r === r && m.c === c)) { applyMoveReal(selectedCell.r, selectedCell.c, r, c); return; }
   if (clickTeam === currentPlayer) {
-    selectedCell = { r, c }; validMoves = getValidMovesSim(board, r, c, ironSet, kingLeftCenter); updateUI(); return;
+    selectedCell = { r, c }; validMoves = getValidMovesSim(board, r, c, ironSet, kingLeftCenter);
+    if (!validMoves.length) logMsg(`Esa pieza en ${squareName(r, c)} no tiene movimientos.`, 'warn'); else sfxSelect();
+    updateUI(); return;
   }
   selectedCell = null; validMoves = []; updateUI();
 }
@@ -268,6 +283,7 @@ function applyMoveReal(fR, fC, tR, tC) {
   board[fR][fC] = '.'; board[tR][tC] = piece; if (piece === 'S' && !kingLeftCenter) kingLeftCenter = true;
   lastFrom = { r: fR, c: fC }; lastTo = { r: tR, c: tC }; 
   animateNextMove = true; 
+  sfxMove(piece);
   let logs = [{ text: `[${team === 'atacante' ? 'Invasores' : 'Defensores'}] Mueve ${from} → ${to}`, type: team === 'atacante' ? 'atk' : 'def' }];
   
   if (piece === 'S' && isCorner(tR, tC)) { ironSet = calculateIronSetSim(board); if (activeBotId && !isAITurn()) setTimeout(() => showBotDialogue('kingEscape'), 600); endGame('defensor', `El Señor escapó a ${to}. ¡Victoria del Defensor!`, logs); return; }
@@ -275,9 +291,12 @@ function applyMoveReal(fR, fC, tR, tC) {
   const cap = checkCapturesSim(board, tR, tC, kingLeftCenter); let kingCaptured = false;
   for (const c of cap) { board[c.r][c.c] = '.'; logs.push({ text: `Captura: Pieza en ${squareName(c.r, c.c)} eliminada.`, type: 'cap' }); if (c.piece === 'S') kingCaptured = true; trackQuest('capture', 1); }
   
-  const prevSz = ironSet.size; ironSet = calculateIronSetSim(board); 
-  if (kingCaptured) { endGame('atacante', 'El Señor fue capturado. ¡Victoria de los Invasores!', logs); return; }
+  if (kingCaptured) sfxKingCapture(); else if (cap.length) { sfxCapture(); unlockAchievement('first_blood'); if (!isAITurn() && activeBotId) setTimeout(() => showBotDialogue('theirCapture'), 600); }
   
+  const prevSz = ironSet.size; ironSet = calculateIronSetSim(board); 
+  if (ironSet.size > prevSz) { sfxIronLine(); trackQuest('iron', 1); unlockAchievement('iron_wall'); }
+  
+  if (kingCaptured) { endGame('atacante', 'El Señor fue capturado. ¡Victoria de los Invasores!', logs); return; }
   const hash = getBoardHash(); boardHistory.push(hash);
   if (boardHistory.filter(h => h === hash).length >= 3) { endGame('empate', 'Empate por triple repetición.', logs); return; }
   
@@ -289,10 +308,39 @@ function applyMoveReal(fR, fC, tR, tC) {
 }
 
 function endGame(winner, msg, logs = [], reason = null) {
-  isGameOver = true; logs.push({ text: '— ' + msg, type: 'cap' }); saveState(logs); updateUI();
+  if (!isGameOver) {
+      playerStats.played++;
+      if (winner === 'empate') { playerStats.draws++; } else if (gameMode.startsWith('pve')) {
+          const isAtk = gameMode === 'pve-atk'; 
+          if ((isAtk && winner === 'atacante') || (!isAtk && winner === 'defensor')) {
+              playerStats.wins++; trackQuest('win', 1); 
+              if (!isAtk && winner === 'defensor') unlockAchievement('defender_win');
+              if (isAtk && winner === 'atacante') unlockAchievement('invader_win');
+              if (round < 10) unlockAchievement('speedrun');
+          } else { playerStats.losses++; }
+      }
+      saveStats();
+  }
+  isGameOver = true; logs.push({ text: '— ' + msg, type: 'cap' }); saveState(logs); updateUI(); stopMusic();
+  setTimeout(() => { if (winner === 'empate') sfxDraw(); else sfxVictory(winner); }, 350);
+  
+  const aiSide = (gameMode === 'pve-def') ? 'atacante' : (gameMode === 'pve-atk') ? 'defensor' : null;
+  if (activeBotId && (aiSide || gameMode === 'eve')) { const botWon = (winner === (aiSide || 'atacante')); setTimeout(() => showBotDialogue(botWon ? 'win' : 'lose'), 1200); }
+  
+  let displayMsg = msg;
+  if (activeBotId && (gameMode === 'pve-def' || gameMode === 'pve-atk')) {
+    const bot = BOTS[activeBotId]; const botWon = (winner === (aiSide || 'atacante')); const finalLines = botWon ? bot.dialogue.win : bot.dialogue.lose;
+    if (finalLines && finalLines.length) displayMsg = winner === 'atacante' ? `◈ ${bot.name} gana. "${finalLines[Math.floor(Math.random() * finalLines.length)]}"` : `Victoria tuya. "${finalLines[Math.floor(Math.random() * finalLines.length)]}"`;
+  }
+  
   const icons = { defensor: '🏛', atacante: '⚔', empate: '⚖' }; const titles = { defensor: 'Victoria del Defensor', atacante: 'Victoria de los Invasores', empate: 'Empate' }; const colors = { defensor: 'var(--steel-bright)', atacante: 'var(--blood-bright)', empate: 'var(--fire-gold)' };
-  document.getElementById('modal-icon').textContent = icons[winner]; document.getElementById('modal-title').textContent = titles[winner]; document.getElementById('modal-title').style.color = colors[winner]; document.getElementById('modal-msg').textContent = msg; document.getElementById('end-overlay').classList.add('show');
+  document.getElementById('modal-icon').textContent = icons[winner]; document.getElementById('modal-title').textContent = titles[winner]; document.getElementById('modal-title').style.color = colors[winner]; document.getElementById('modal-msg').textContent = displayMsg;
+  const extOpts = document.getElementById('extend-options');
+  if (extOpts) { if (reason === 'round_limit') { extOpts.style.display = 'block'; document.getElementById('btn-ext-25').style.display = maxRounds < 25 ? 'inline-block' : 'none'; document.getElementById('btn-ext-30').style.display = maxRounds < 30 ? 'inline-block' : 'none'; document.getElementById('btn-ext-40').style.display = maxRounds < 40 ? 'inline-block' : 'none'; document.getElementById('btn-ext-50').style.display = maxRounds < 50 ? 'inline-block' : 'none'; } else { extOpts.style.display = 'none'; } }
+  document.getElementById('end-overlay').classList.add('show');
 }
+function hideEndModal() { document.getElementById('end-overlay').classList.remove('show'); }
+function extendGame(newLimit) { if (newLimit <= round) return; maxRounds = newLimit; isGameOver = false; if (stateHistory.length > 0) { stateHistory[stateHistory.length - 1].isGameOver = false; stateHistory[stateHistory.length - 1].maxRounds = newLimit; stateHistory[stateHistory.length - 1].logs.push({text: `El asedio se prolonga a ${newLimit} rondas.`, type: 'sys'}); } hideEndModal(); logMsg(`El asedio se prolonga a ${newLimit} rondas.`, 'sys'); if (musicVol > 0 && !musicRunning) startMusic(); updateUI(); checkAndTriggerAI(); }
 
 function undoMove() {
   if (isProcessingAI || isGameOver) return; 
@@ -362,12 +410,10 @@ function updateUI() {
   if (historyIndex < stateHistory.length - 1) { ovl.style.display = 'block'; badge.textContent = '⏱ Revisando partida'; badge.className = ''; badge.style.cssText = 'color:var(--stone-pale);border-color:var(--stone-pale);background:rgba(0,0,0,0.3);'; } else { ovl.style.display = 'none'; badge.style.cssText = ''; if (isGameOver) { badge.textContent = 'Partida Finalizada'; badge.className = ''; badge.style.cssText = 'color:var(--fire-dim);border-color:var(--fire-dim);background:rgba(200,114,40,0.05);'; } else { const ai = isAITurn() ? ' (IA)' : ''; if (currentPlayer === 'atacante') { badge.textContent = `Invasores${ai} ▶`; badge.className = 'atacante'; } else { badge.textContent = `Defensores${ai} ▶`; badge.className = 'defensor'; } } }
   document.getElementById('round-display').textContent = `Ronda ${round} / ${maxRounds}`; if(ironSet) document.getElementById('iron-badge').classList.toggle('active', ironSet.size > 0);
   
-  // Actualizar el texto del botón deshacer
   const undoBtn = document.getElementById('btn-undo');
   if (undoBtn) {
     if (undosLeft === Infinity) undoBtn.textContent = '⟲ Deshacer (∞)';
     else undoBtn.textContent = `⟲ Deshacer (${undosLeft})`;
-    
     if(stateHistory.length <= 1 || undosLeft <= 0 || isProcessingAI || isGameOver) undoBtn.disabled = true;
     else undoBtn.disabled = false;
   }
@@ -399,4 +445,41 @@ function showBotDialogue(event) { const line = getBotDialogue(event); if (!line 
 function changeTheme(theme) { document.body.setAttribute('data-theme', theme); if(board) updateUI(); }
 function copyLog() { if (!stateHistory || stateHistory.length === 0) return; let text = 'DOMINIO — Registro de Partida\n\n'; stateHistory.forEach(s => s.logs.forEach(l => { text += l.text + '\n'; })); const btn = document.getElementById('btn-copy'); const ok = () => { const orig = btn.innerHTML; btn.innerHTML = '✓ Copiado'; btn.style.color = 'var(--fire-bright)'; setTimeout(() => { btn.innerHTML = orig; btn.style.color = 'var(--fire-gold)'; }, 2000); }; if (navigator.clipboard && window.isSecureContext) { navigator.clipboard.writeText(text).then(ok).catch(() => fallbackCopy(text, ok)); } else { fallbackCopy(text, ok); } }
 function fallbackCopy(text, cb) { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand('copy'); cb(); } catch (e) { console.error(e); } document.body.removeChild(ta); }
+
+/* ══════════════════════════════════════════════
+   AUDIO ENGINE (Sin cambios, solo añadido)
+══════════════════════════════════════════════ */
+let audioCtx = null, globalMusicGain = null, globalSfxGain = null, reverbNode = null, sfxVol = 0.5, musicVol = 0.5;
+function getCtx() { if (!audioCtx) { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); globalMusicGain = audioCtx.createGain(); globalMusicGain.gain.value = musicVol; globalMusicGain.connect(audioCtx.destination); globalSfxGain = audioCtx.createGain(); globalSfxGain.gain.value = sfxVol; globalSfxGain.connect(audioCtx.destination); } if (audioCtx.state === 'suspended') audioCtx.resume(); return audioCtx; }
+function getReverb() { if (reverbNode) return reverbNode; const ctx = getCtx(); const len = ctx.sampleRate * 2.2; const buf = ctx.createBuffer(2, len, ctx.sampleRate); for (let c = 0; c < 2; c++) { const d = buf.getChannelData(c); for (let i = 0; i < len; i++) { const t = i / ctx.sampleRate; let v = (Math.random() * 2 - 1) * Math.exp(-t * 2.8); if (i === Math.floor(0.020 * ctx.sampleRate)) v += 0.3; if (i === Math.floor(0.035 * ctx.sampleRate)) v += 0.2; if (i === Math.floor(0.055 * ctx.sampleRate)) v += 0.15; d[i] = v; } } const cv = ctx.createConvolver(); cv.buffer = buf; const g = ctx.createGain(); g.gain.value = 0.16; cv.connect(g); g.connect(globalSfxGain); reverbNode = cv; return reverbNode; }
+function sendToReverb(node) { const rv = getReverb(); if (rv) node.connect(rv); }
+function updateVol(type, val) { val = parseFloat(val); const ctx = getCtx(); if (type === 'music') { musicVol = val; if (globalMusicGain) globalMusicGain.gain.setTargetAtTime(val, ctx.currentTime, 0.08); if (val > 0 && !musicRunning && !isGameOver && !document.getElementById('start-overlay').classList.contains('show')) startMusic(); } else { sfxVol = val; if (globalSfxGain) globalSfxGain.gain.setTargetAtTime(val, ctx.currentTime, 0.08); } }
+function sfxSelect() { if (sfxVol <= 0) return; const ctx = getCtx(), t = ctx.currentTime; const car = ctx.createOscillator(), mod = ctx.createOscillator(), modG = ctx.createGain(); car.type = 'sine'; car.frequency.value = 660; mod.type = 'sine'; mod.frequency.value = 660 * 3.5; modG.gain.setValueAtTime(500, t); modG.gain.exponentialRampToValueAtTime(50, t + 0.3); mod.connect(modG); modG.connect(car.frequency); const env = ctx.createGain(); env.gain.setValueAtTime(0, t); env.gain.linearRampToValueAtTime(0.35, t + 0.005); env.gain.exponentialRampToValueAtTime(0.001, t + 1.4); car.connect(env); env.connect(globalSfxGain); sendToReverb(env); car.start(t); mod.start(t); car.stop(t + 1.6); mod.stop(t + 1.6); }
+function sfxMoveInvader() { if (sfxVol <= 0) return; const ctx = getCtx(), t = ctx.currentTime; const buf = ctx.createBuffer(1, ctx.sampleRate * 0.25, ctx.sampleRate); const d = buf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.06)); const src = ctx.createBufferSource(); src.buffer = buf; const filt = ctx.createBiquadFilter(); filt.type = 'bandpass'; filt.frequency.value = 2200; filt.Q.value = 8; const g = ctx.createGain(); g.gain.value = 0.45; src.connect(filt); filt.connect(g); g.connect(globalSfxGain); sendToReverb(g); src.start(t); const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = 1800; const og = ctx.createGain(); og.gain.setValueAtTime(0.12, t + 0.03); og.gain.exponentialRampToValueAtTime(0.001, t + 0.18); o.connect(og); og.connect(globalSfxGain); o.start(t + 0.03); o.stop(t + 0.2); }
+function sfxMoveGuardian() { if (sfxVol <= 0) return; const ctx = getCtx(), t = ctx.currentTime; const buf = ctx.createBuffer(1, ctx.sampleRate * 0.35, ctx.sampleRate); const d = buf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.12)); const src = ctx.createBufferSource(); src.buffer = buf; const filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 220; filt.frequency.linearRampToValueAtTime(500, t + 0.1); const g = ctx.createGain(); g.gain.value = 0.55; src.connect(filt); filt.connect(g); g.connect(globalSfxGain); sendToReverb(g); src.start(t); }
+function sfxMoveKing() { if (sfxVol <= 0) return; const ctx = getCtx(), t = ctx.currentTime; [[220, 0], [220 * 1.008, 0.01], [330, 0.02]].forEach(([f, dt], i) => { const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f; const env = ctx.createGain(); env.gain.setValueAtTime(0, t + dt); env.gain.linearRampToValueAtTime(0.22 - i * 0.06, t + dt + 0.008); env.gain.exponentialRampToValueAtTime(0.001, t + dt + 1.2); o.connect(env); env.connect(globalSfxGain); sendToReverb(env); o.start(t + dt); o.stop(t + dt + 1.4); }); }
+function sfxMove(piece) { if (piece === 'I') sfxMoveInvader(); else if (piece === 'G') sfxMoveGuardian(); else if (piece === 'S') sfxMoveKing(); }
+function sfxCapture() { if (sfxVol <= 0) return; const ctx = getCtx(), t = ctx.currentTime; [800, 1400, 2100].forEach((f, i) => { const o = ctx.createOscillator(); o.type = 'square'; o.frequency.value = f; const g = ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.12 - i * 0.03, t + 0.005); g.gain.exponentialRampToValueAtTime(0.001, t + 0.18 + i * 0.04); o.connect(g); g.connect(globalSfxGain); sendToReverb(g); o.start(t); o.stop(t + 0.3); }); const ibuf = ctx.createBuffer(1, ctx.sampleRate * 0.12, ctx.sampleRate); const id = ibuf.getChannelData(0); for (let i = 0; i < id.length; i++) id[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.015)); const is = ctx.createBufferSource(); is.buffer = ibuf; const ifilt = ctx.createBiquadFilter(); ifilt.type = 'highpass'; ifilt.frequency.value = 3000; const ig = ctx.createGain(); ig.gain.value = 0.4; is.connect(ifilt); ifilt.connect(ig); ig.connect(globalSfxGain); sendToReverb(ig); is.start(t); }
+function sfxKingCapture() { if (sfxVol <= 0) return; const ctx = getCtx(), t = ctx.currentTime; const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(110, t); o.frequency.exponentialRampToValueAtTime(36, t + 0.8); const filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 400; const env = ctx.createGain(); env.gain.setValueAtTime(0.6, t); env.gain.exponentialRampToValueAtTime(0.001, t + 0.9); o.connect(filt); filt.connect(env); env.connect(globalSfxGain); sendToReverb(env); o.start(t); o.stop(t + 1.0); const ibuf = ctx.createBuffer(1, ctx.sampleRate * 0.6, ctx.sampleRate); const id = ibuf.getChannelData(0); for (let i = 0; i < id.length; i++) id[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.18)); const is = ctx.createBufferSource(); is.buffer = ibuf; const ifl = ctx.createBiquadFilter(); ifl.type = 'bandpass'; ifl.frequency.value = 80; ifl.Q.value = 0.8; const ig = ctx.createGain(); ig.gain.value = 0.35; is.connect(ifl); ifl.connect(ig); ig.connect(globalSfxGain); sendToReverb(ig); is.start(t + 0.05); }
+function sfxVictory(winner) { if (sfxVol <= 0) return; const ctx = getCtx(), t = ctx.currentTime; const notes = winner === 'defensor' ? [523.25, 659.25, 783.99, 1046.5, 1318.5] : [220, 246.94, 261.63, 293.66, 220]; notes.forEach((freq, i) => { const o = ctx.createOscillator(); o.type = winner === 'defensor' ? 'triangle' : 'sawtooth'; o.frequency.value = freq; const filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = winner === 'defensor' ? 3000 : 800; const env = ctx.createGain(); const st = t + i * 0.18; env.gain.setValueAtTime(0, st); env.gain.linearRampToValueAtTime(0.28, st + 0.04); env.gain.setValueAtTime(0.28, st + 0.22); env.gain.exponentialRampToValueAtTime(0.001, st + 0.85); o.connect(filt); filt.connect(env); env.connect(globalSfxGain); sendToReverb(env); o.start(st); o.stop(st + 1.0); }); }
+function sfxDraw() { if (sfxVol <= 0) return; const ctx = getCtx(), t = ctx.currentTime; [220, 261.63, 311.13, 369.99].forEach((f, i) => { const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f; const g = ctx.createGain(); const st = t + i * 0.09; g.gain.setValueAtTime(0, st); g.gain.linearRampToValueAtTime(0.14, st + 0.06); g.gain.exponentialRampToValueAtTime(0.001, st + 0.75); o.connect(g); g.connect(globalSfxGain); sendToReverb(g); o.start(st); o.stop(st + 0.9); }); }
+function sfxIronLine() { if (sfxVol <= 0) return; const ctx = getCtx(), t = ctx.currentTime; [80, 160, 240].forEach((f, i) => { const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f; const g = ctx.createGain(); g.gain.setValueAtTime(0.12 - i * 0.03, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.5); o.connect(g); g.connect(globalSfxGain); sendToReverb(g); o.start(t); o.stop(t + 0.55); }); }
+function sfxGameStart() { if (sfxVol <= 0) return; const ctx = getCtx(), t = ctx.currentTime; [110, 165, 220].forEach((f, i) => { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(f * 1.04, t + i * 0.18); o.frequency.exponentialRampToValueAtTime(f, t + i * 0.18 + 0.12); const filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 600; const g = ctx.createGain(); g.gain.setValueAtTime(0, t + i * 0.18); g.gain.linearRampToValueAtTime(0.25 - i * 0.05, t + i * 0.18 + 0.06); g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.18 + 1.4); o.connect(filt); filt.connect(g); g.connect(globalSfxGain); sendToReverb(g); o.start(t + i * 0.18); o.stop(t + i * 0.18 + 1.6); }); }
+
+let currentMusicTheme = 'gregoriano'; function changeMusicTheme(theme) { currentMusicTheme = theme; }
+const DORIAN = [146.83, 164.81, 174.61, 196.00, 220.00, 246.94, 261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25]; const MIXOLYDIAN = [146.83, 164.81, 185.00, 196.00, 220.00, 246.94, 261.63, 293.66, 329.63, 370.00]; const AEOLIAN = [146.83, 164.81, 174.61, 196.00, 220.00, 233.08, 261.63, 293.66, 329.63, 349.23];
+const CHANT_PHRASES = [[0, 2, 1, 0, 3, 2, 1, 0], [4, 3, 5, 4, 3, 2, 1, 0], [2, 4, 5, 6, 5, 4, 2, 0], [6, 5, 4, 5, 6, 7, 6, 4], [0, 1, 2, 0, 3, 2, 1, 0], [3, 5, 4, 6, 5, 3, 2, 1], [7, 6, 5, 4, 3, 2, 1, 0], [2, 4, 3, 2, 4, 5, 4, 2]];
+let musicRunning = false, musicTimeoutId = null, musicPhase = 0;
+function startMusic() { if (musicVol <= 0 || musicRunning) return; const ctx = getCtx(); musicRunning = true; globalMusicGain.gain.cancelScheduledValues(ctx.currentTime); globalMusicGain.gain.setValueAtTime(0, ctx.currentTime); globalMusicGain.gain.linearRampToValueAtTime(musicVol, ctx.currentTime + 3.5); scheduleMusicLoop(); }
+function stopMusic() { musicRunning = false; if (musicTimeoutId) { clearTimeout(musicTimeoutId); musicTimeoutId = null; } if (!audioCtx || !globalMusicGain) return; const t = audioCtx.currentTime; globalMusicGain.gain.cancelScheduledValues(t); globalMusicGain.gain.setValueAtTime(globalMusicGain.gain.value, t); globalMusicGain.gain.linearRampToValueAtTime(0, t + 3.0); }
+function scheduleMusicLoop() { if (!musicRunning || musicVol <= 0) { if (musicVol <= 0) musicRunning = false; return; } const ctx = getCtx(), t = ctx.currentTime; if (currentMusicTheme === 'gregoriano') { const DUR = 9.0; playHurdyGurdy(ctx, t, DUR, 1.0); playChantPhrase(ctx, t, musicPhase, DORIAN, false); playBodhran(ctx, t, DUR, 'slow'); if (Math.random() > 0.35) playLute(ctx, t + 1.5 + Math.random() * 3, 4, DORIAN); musicPhase = (musicPhase + 1) % 8; musicTimeoutId = setTimeout(scheduleMusicLoop, (DUR - 0.5) * 1000); } else if (currentMusicTheme === 'taberna') { const DUR = 6.0; playHurdyGurdy(ctx, t, DUR, 1.4); playBodhran(ctx, t, DUR, 'jig'); playLuteArpeggio(ctx, t, DUR, MIXOLYDIAN); musicTimeoutId = setTimeout(scheduleMusicLoop, (DUR - 0.2) * 1000); } else if (currentMusicTheme === 'mistico') { const DUR = 12.0; playMysticDrone(ctx, t, DUR); if (Math.random() > 0.4) playChantPhrase(ctx, t + 2, musicPhase, AEOLIAN, true); if (Math.random() > 0.6) playLute(ctx, t + Math.random() * 6, 2, AEOLIAN); musicPhase = (musicPhase + 1) % 8; musicTimeoutId = setTimeout(scheduleMusicLoop, (DUR - 1.0) * 1000); } }
+function playHurdyGurdy(ctx, t, dur, lfoMult) { const strings = [{ freq: 146.83, vol: 0.055, detune: 0 }, { freq: 146.83, vol: 0.040, detune: 1.007 }, { freq: 73.41, vol: 0.065, detune: 1.0 }]; strings.forEach(({ freq, vol, detune }) => { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = freq * detune; const lfo = ctx.createOscillator(); const lfoG = ctx.createGain(); lfo.frequency.value = (7.2 + Math.random() * 0.3) * lfoMult; lfoG.gain.value = 0.9; lfo.connect(lfoG); lfoG.connect(o.frequency); const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 60; const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 700; lp.Q.value = 1.5; const env = ctx.createGain(); env.gain.setValueAtTime(0, t); env.gain.linearRampToValueAtTime(vol, t + 1.0); env.gain.setValueAtTime(vol, t + dur - 1.0); env.gain.linearRampToValueAtTime(0, t + dur); o.connect(hp); hp.connect(lp); lp.connect(env); env.connect(globalMusicGain); lfo.start(t); lfo.stop(t + dur + 0.2); o.start(t); o.stop(t + dur + 0.2); }); }
+function playMysticDrone(ctx, t, dur) { const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = 73.41; const o2 = ctx.createOscillator(); o2.type = 'triangle'; o2.frequency.value = 110.0; const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.Q.value = 4; lp.frequency.setValueAtTime(200, t); lp.frequency.exponentialRampToValueAtTime(600, t + dur/2); lp.frequency.exponentialRampToValueAtTime(200, t + dur); const env = ctx.createGain(); env.gain.setValueAtTime(0, t); env.gain.linearRampToValueAtTime(0.08, t + 3.0); env.gain.setValueAtTime(0.08, t + dur - 3.0); env.gain.linearRampToValueAtTime(0, t + dur); o.connect(lp); o2.connect(lp); lp.connect(env); env.connect(globalMusicGain); sendToReverb(env); o.start(t); o.stop(t + dur); o2.start(t); o2.stop(t + dur); }
+function playChantPhrase(ctx, t, phase, scale, isAmbient) { const pattern = CHANT_PHRASES[phase]; const beatDur = isAmbient ? 1.5 : 1.12; pattern.forEach((idx, beat) => { const freq  = scale[Math.min(idx, scale.length - 1)]; const freq5 = freq * (3/4); const noteLen = beat === pattern.length - 1 ? 1.9 : 0.75; const noteT   = t + beat * beatDur + Math.random() * 0.03; const mel = ctx.createOscillator(); mel.type = 'triangle'; mel.frequency.value = freq * 2; const nbuf = ctx.createBuffer(1, 512, ctx.sampleRate); const nd = nbuf.getChannelData(0); for (let i = 0; i < 512; i++) nd[i] = (Math.random() * 2 - 1) * 0.06; const ns = ctx.createBufferSource(); ns.buffer = nbuf; ns.loop = true; const nf = ctx.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = freq * 6; nf.Q.value = 1.5; const melEnv = ctx.createGain(); const maxVol = isAmbient ? 0.05 : 0.085; melEnv.gain.setValueAtTime(0, noteT); melEnv.gain.linearRampToValueAtTime(maxVol, noteT + 0.09); melEnv.gain.setValueAtTime(maxVol*0.9, noteT + noteLen * 0.8); melEnv.gain.exponentialRampToValueAtTime(0.001, noteT + noteLen); mel.connect(melEnv); ns.connect(nf); nf.connect(melEnv); melEnv.connect(globalMusicGain); sendToReverb(melEnv); mel.start(noteT); mel.stop(noteT + noteLen + 0.1); ns.start(noteT); ns.stop(noteT + noteLen + 0.1); if (!isAmbient && beat % 2 === 0) { const org = ctx.createOscillator(); org.type = 'sine'; org.frequency.value = freq5; const orgEnv = ctx.createGain(); orgEnv.gain.setValueAtTime(0, noteT); orgEnv.gain.linearRampToValueAtTime(0.045, noteT + 0.12); orgEnv.gain.exponentialRampToValueAtTime(0.001, noteT + noteLen * 1.3); org.connect(orgEnv); orgEnv.connect(globalMusicGain); sendToReverb(orgEnv); org.start(noteT); org.stop(noteT + noteLen * 1.4); } }); }
+function playBodhran(ctx, t, dur, style) { let pattern = []; if (style === 'slow') pattern = [0, 1.12, 2.24, 3.36, 4.48, 5.60, 6.72, 7.84]; if (style === 'jig') pattern = [0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5]; pattern.forEach((beat, i) => { const bt = t + beat + (Math.random() * 0.02 - 0.01); const isAccent = (style === 'jig') ? (i % 3 === 0) : (i % 4 === 0); const buf = ctx.createBuffer(1, ctx.sampleRate * 0.22, ctx.sampleRate); const d = buf.getChannelData(0); const tc = ctx.sampleRate * (isAccent ? 0.055 : 0.038); for (let j = 0; j < d.length; j++) d[j] = (Math.random() * 2 - 1) * Math.exp(-j / tc); const src = ctx.createBufferSource(); src.buffer = buf; const filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.setValueAtTime(isAccent ? 180 : 140, bt); filt.frequency.linearRampToValueAtTime(isAccent ? 400 : 280, bt + 0.08); const g = ctx.createGain(); g.gain.value = isAccent ? 0.12 : 0.072; src.connect(filt); filt.connect(g); g.connect(globalMusicGain); sendToReverb(g); src.start(bt); if (!isAccent && (i % 2 !== 0)) { const rbuf = ctx.createBuffer(1, ctx.sampleRate * 0.06, ctx.sampleRate); const rd = rbuf.getChannelData(0); for (let j = 0; j < rd.length; j++) rd[j] = (Math.random() * 2 - 1) * Math.exp(-j / (ctx.sampleRate * 0.012)); const rs = ctx.createBufferSource(); rs.buffer = rbuf; const rf = ctx.createBiquadFilter(); rf.type = 'highpass'; rf.frequency.value = 1800; const rg = ctx.createGain(); rg.gain.value = 0.045; rs.connect(rf); rf.connect(rg); rg.connect(globalMusicGain); rs.start(bt + 0.01); } }); }
+function playLute(ctx, t, numNotes, scale) { for (let n = 0; n < numNotes; n++) { const noteT  = t + n * (0.45 + Math.random() * 0.35); const freq   = scale[Math.floor(Math.random() * scale.length)] * (Math.random() > 0.6 ? 2 : 1); pluckLuteString(ctx, noteT, freq, 0.08 + Math.random() * 0.03); } }
+function playLuteArpeggio(ctx, t, dur, scale) { const notesPerSec = 4; const totalNotes = Math.floor(dur * notesPerSec); for (let n = 0; n < totalNotes; n++) { const noteT = t + n * 0.25; const idx = [0, 2, 4, 6, 4, 2][n % 6]; const freq = scale[idx] * (n%12===0 ? 0.5 : 1); pluckLuteString(ctx, noteT, freq, 0.05 + (n%3===0 ? 0.03 : 0)); } }
+function pluckLuteString(ctx, t, freq, vol) { const bufLen = Math.max(4, Math.round(ctx.sampleRate / freq)); const total  = bufLen + Math.floor(ctx.sampleRate * 1.0); const buf    = ctx.createBuffer(1, total, ctx.sampleRate); const d      = buf.getChannelData(0); for (let i = 0; i < bufLen; i++) d[i] = Math.random() * 2 - 1; for (let i = bufLen; i < total; i++) d[i] = (d[i - bufLen] + d[i - bufLen + (bufLen > 1 ? 1 : 0)]) * 0.497; const src = ctx.createBufferSource(); src.buffer = buf; const filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 2000; const g = ctx.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + 1.3); src.connect(filt); filt.connect(g); g.connect(globalMusicGain); sendToReverb(g); src.start(t); src.stop(t + 1.4); }
+
+// Iniciar al cargar
 window.addEventListener('DOMContentLoaded', () => { showStartMenu(); });
